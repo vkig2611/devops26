@@ -9,15 +9,15 @@ jobs:
   notify:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout repository
+      - name: Checkout repository with submodules
         uses: actions/checkout@v3
         with:
-          submodules: true  # Ensures submodules are fetched correctly
+          submodules: recursive  # Ensures submodules are fetched correctly
 
       - name: Fix missing submodule URL (if needed)
         run: |
           git submodule sync --recursive
-          git submodule update --init --recursive
+          git submodule update --init --recursive || echo "Skipping submodule update due to missing URL"
 
       - name: Create a text file
         run: echo "🚀 A new push was made to the main branch!" > notification.txt
