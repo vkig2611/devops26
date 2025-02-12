@@ -22,7 +22,10 @@ jobs:
       - name: Create a text file
         run: echo "🚀 A new push was made to the main branch!" > notification.txt
 
-      - name: Share a file to Slack
+      - name: Zip the text file
+        run: zip notification.zip notification.txt
+
+      - name: Share the ZIP file to Slack
         uses: slackapi/slack-github-action@v2.0.0
         with:
           method: files.uploadV2
@@ -30,8 +33,8 @@ jobs:
           payload: |
             channel_id: ${{ secrets.SLACK_CHANNEL_ID }}
             initial_comment: "🚀 A new push was made!"
-            file: "./notification.txt"
-            filename: "notification-${{ github.sha }}.txt"
+            file: "./notification.zip"
+            filename: "notification-${{ github.sha }}.zip"
         env:
           SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
           SLACK_CHANNEL_ID: ${{ secrets.SLACK_CHANNEL_ID }}
