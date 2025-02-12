@@ -11,6 +11,13 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
+        with:
+          submodules: true  # Ensures submodules are fetched correctly
+
+      - name: Fix missing submodule URL (if needed)
+        run: |
+          git submodule sync --recursive
+          git submodule update --init --recursive
 
       - name: Create a text file
         run: echo "🚀 A new push was made to the main branch!" > notification.txt
