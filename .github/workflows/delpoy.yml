@@ -9,10 +9,19 @@ jobs:
   notify:
     runs-on: ubuntu-latest
     steps:
-      - name: Send notification to Slack
-        uses: rtCamp/action-slack-notify@v2
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Create a text file
+        run: echo "🚀 A new push was made to the main branch!" > notification.txt
+
+      - name: Send text file to Slack
+        run: |
+          curl -F file=@notification.txt \
+               -F "initial_comment=Latest update notification" \
+               -F channels=$SLACK_CHANNEL_ID \
+               -H "Authorization: Bearer $SLACK_BOT_TOKEN" \
+               https://slack.com/api/files.upload
         env:
-          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK_URL }}
-          SLACK_MESSAGE: "🚀 A new push was made to the main branch!"
-          SLACK_USERNAME: "GitHub Actions"
-          SLACK_ICON_EMOJI: ":github:"
+          SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
+          SLACK_CHANNEL_ID: ${{ secrets.SLACK_CHANNEL_ID }}
