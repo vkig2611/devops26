@@ -10,22 +10,31 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # Step 1: Checkout the repository
       - name: Checkout code
         uses: actions/checkout@v3
 
-      # Step 2: Zip the notification.txt file
-      - name: Zip notification.txt
-        run: |
-          zip notification.zip notification.txt
+      - name: Install zip (if needed)
+        run: sudo apt-get update && sudo apt-get install -y zip
 
-      # Step 3: Upload the zipped file to Slack
-      - name: Send zip file to Slack
-        env:
-          SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}  # Store your Slack token in GitHub Secrets
+      - name: Zip notification.txt into output.zip
         run: |
-          curl -F file=@notification.zip \
-               -F channels=#your-channel-name \
-               -F initial_comment="Latest API test collection is attached! �" \
-               -H "Authorization: Bearer $SLACK_BOT_TOKEN" \
-               https://slack.com/api/files.upload
+          if [ -f "notification.txt" ]; then
+            zip -j output.zip notification.txt
+          else
+            echo "notification.txt not found!" && exit 1
+          fi
+
+      - name: Upload output.zip as an artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: output-zip
+          path: output.zip
+
+      - name: Send output.zip to Slack
+        uses: slackapi/slack-github-action@v1
+        with:
+          channel-id: ${{ secrets.SLACK_CHANNEL }}
+          slack-message: "Latest API test collection is attached! 📂"
+          file-path: output.zip
+        env:
+          SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
