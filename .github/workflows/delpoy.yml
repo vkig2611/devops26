@@ -1,4 +1,4 @@
-name: Zip and Send Notification.txt to Slack
+name: Notify Slack on Push
 
 on:
   push:
@@ -6,45 +6,29 @@ on:
       - main
 
 jobs:
-  zip-and-send:
+  notify:
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4  
+      - name: Checkout repository
+        uses: actions/checkout@v3
 
-      - name: Install zip (if needed)
-        run: sudo apt-get update && sudo apt-get install -y zip
+      - name: Create a text file
+        run: echo "🚀 A new push was made to the main branch!" > notification.txt
 
-      - name: Zip notification.txt into output.zip
+      - name: Create ZIP archive
         run: |
-          if [ -f "notification.txt" ]; then
-            zip -j output.zip notification.txt
-          else
-            echo "notification.txt not found!" && exit 1
-          fi
+          zip -r output.zip notification.txt
 
-      - name: Upload output.zip as an artifact
-        uses: actions/upload-artifact@v4  
+      - name: Share ZIP file to Slack
+        uses: slackapi/slack-github-action@v2.0.0
         with:
-          name: output-zip
-          path: output.zip
-
-      - name: Send a Slack notification
-        uses: rtCamp/action-slack-notify@v2
-        env:
-          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK_URL }}
-          SLACK_CHANNEL: ${{ secrets.SLACK_CHANNEL }}
-          SLACK_COLOR: "#36a64f"
-          SLACK_MESSAGE: "Latest API test collection is ready! 📂"
-
-      - name: Upload output.zip to Slack
+          method: files.uploadV2
+          token: ${{ secrets.SLACK_BOT_TOKEN }}
+          payload: |
+            channel_id: ${{ secrets.SLACK_CHANNEL_ID }}
+            initial_comment: "🚀 A new push was made!"
+            file: "./output.zip"
+            filename: "notification-${{ github.sha }}.zip"
         env:
           SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
-        run: |
-          curl -X POST \
-               -H "Authorization: Bearer $SLACK_BOT_TOKEN" \
-               -F "file=@output.zip" \
-               -F "channels=${{ secrets.SLACK_CHANNEL }}" \
-               -F "initial_comment=Here is the latest API test collection! 📂" \
-               https://slack.com/api/files.uploadV2
+          SLACK_CHANNEL_ID: ${{ secrets.SLACK_CHANNEL_ID }}
