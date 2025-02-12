@@ -1,4 +1,4 @@
-name: Zip and Send API Test Collections to Slack
+name: Zip and Send Notification.txt to Slack
 
 on:
   push:
@@ -14,20 +14,18 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      # Step 2: Locate and zip the text files
-      - name: Zip text files
+      # Step 2: Zip the notification.txt file
+      - name: Zip notification.txt
         run: |
-          mkdir -p api_tests
-          cp path/to/your/text/files/*.txt api_tests/
-          zip -r api_tests.zip api_tests/
+          zip notification.zip notification.txt
 
       # Step 3: Upload the zipped file to Slack
       - name: Send zip file to Slack
         env:
           SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}  # Store your Slack token in GitHub Secrets
         run: |
-          curl -F file=@api_tests.zip \
+          curl -F file=@notification.zip \
                -F channels=#your-channel-name \
-               -F initial_comment="Latest API test collections are attached! 🚀" \
+               -F initial_comment="Latest API test collection is attached! �" \
                -H "Authorization: Bearer $SLACK_BOT_TOKEN" \
                https://slack.com/api/files.upload
