@@ -11,7 +11,7 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4  # Updated to the latest version
 
       - name: Install zip (if needed)
         run: sudo apt-get update && sudo apt-get install -y zip
@@ -25,7 +25,7 @@ jobs:
           fi
 
       - name: Upload output.zip as an artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4  # Updated to v4
         with:
           name: output-zip
           path: output.zip
