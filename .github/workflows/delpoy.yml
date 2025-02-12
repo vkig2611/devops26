@@ -11,7 +11,7 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4  # Updated to the latest version
+        uses: actions/checkout@v4  
 
       - name: Install zip (if needed)
         run: sudo apt-get update && sudo apt-get install -y zip
@@ -25,16 +25,25 @@ jobs:
           fi
 
       - name: Upload output.zip as an artifact
-        uses: actions/upload-artifact@v4  # Updated to v4
+        uses: actions/upload-artifact@v4  
         with:
           name: output-zip
           path: output.zip
 
-      - name: Send output.zip to Slack
-        uses: slackapi/slack-github-action@v1
-        with:
-          channel-id: ${{ secrets.SLACK_CHANNEL }}
-          slack-message: "Latest API test collection is attached! 📂"
-          file-path: output.zip
+      - name: Send a Slack notification
+        uses: rtCamp/action-slack-notify@v2
+        env:
+          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK_URL }}
+          SLACK_CHANNEL: ${{ secrets.SLACK_CHANNEL }}
+          SLACK_COLOR: "#36a64f"
+          SLACK_MESSAGE: "Latest API test collection is ready! 📂"
+
+      - name: Upload output.zip to Slack
         env:
           SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
+        run: |
+          curl -F file=@output.zip \
+               -F channels=${{ secrets.SLACK_CHANNEL }} \
+               -F initial_comment="Here is the latest API test collection! 📂" \
+               -H "Authorization: Bearer $SLACK_BOT_TOKEN" \
+               https://slack.com/api/files.upload
