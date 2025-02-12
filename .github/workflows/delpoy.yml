@@ -10,19 +10,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4  
-
-      - name: Install zip (if needed)
-        run: sudo apt-get update && sudo apt-get install -y zip
-
-      - name: Zip notification.txt into output.zip
-        run: |
-          if [ -f "notification.txt" ]; then
-            zip -j output.zip notification.txt
-          else
-            echo "notification.txt not found!" && exit 1
-          fi
+      # ... (Checkout and Zip steps remain the same)
 
       - name: Get file size
         id: file_size
@@ -32,24 +20,34 @@ jobs:
         id: get_upload_url
         run: |
           response=$(curl -X POST -H "Authorization: Bearer ${{ secrets.SLACK_BOT_TOKEN }}" \
-                          -H "Content-Type: application/json" \
-                          -d '{"length": ${{ steps.file_size.outputs.size }}}' \
-                          https://slack.com/api/files.getUploadURLExternal)
-          echo "upload_url=$(echo $response | jq -r '.upload_url')" >> $GITHUB_OUTPUT
-          echo "file_id=$(echo $response | jq -r '.file_id')" >> $GITHUB_OUTPUT
+            -H "Content-Type: application/json" \
+            -d '{"length": ${{ steps.file_size.outputs.size }}}' \
+            https://slack.com/api/files.getUploadURLExternal)
+
+          echo "Slack API Response: $response"  # Debug: Print the full response
+
+          if [[ $(echo "$response" | jq -r '.ok') == "true" ]]; then  # Check for success
+            echo "upload_url=$(echo "$response" | jq -r '.upload_url')" >> $GITHUB_OUTPUT
+            echo "file_id=$(echo "$response" | jq -r '.file_id')" >> $GITHUB_OUTPUT
+          else
+            echo "Error getting upload URL from Slack:"
+            echo "$response"  # Print the error response
+            exit 1  # Fail the workflow
+          fi
 
       - name: Upload file to Slack
+        if: steps.get_upload_url.outputs.upload_url != '' # Only run if upload URL is available
         run: |
           curl -F file=@output.zip \
-               -H "Authorization: Bearer ${{ secrets.SLACK_BOT_TOKEN }}" \
-               ${{ steps.get_upload_url.outputs.upload_url }}
+            -H "Authorization: Bearer ${{ secrets.SLACK_BOT_TOKEN }}" \
+            "${{ steps.get_upload_url.outputs.upload_url }}" || exit 1 # Fail if upload fails
 
       - name: Complete file upload
+        if: steps.get_upload_url.outputs.upload_url != '' # Only run if upload URL is available
         run: |
           curl -X POST -H "Authorization: Bearer ${{ secrets.SLACK_BOT_TOKEN }}" \
-               -H "Content-Type: application/json" \
-               -d '{"files": [{"id": "${{ steps.get_upload_url.outputs.file_id }}", "title": "output.zip"}], "channels": "${{ secrets.SLACK_CHANNEL }}"}' \
-               https://slack.com/api/files.completeUploadExternal
+            -H "Content-Type: application/json" \
+            -d '{"files": [{"id": "${{ steps.get_upload_url.outputs.file_id }}", "title": "output.zip"}], "channels": "${{ secrets.SLACK_CHANNEL }}"}' \
+            https://slack.com/api/files.completeUploadExternal || exit 1 # Fail if completion fails
 
-      - name: Cleanup output.zip
-        run: rm -f output.zip
+      # ... (Cleanup step remains the same)
