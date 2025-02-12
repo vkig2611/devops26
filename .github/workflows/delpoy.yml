@@ -1,4 +1,4 @@
-name: Notify Slack on Push
+name: Zip and Send API Test Collections to Slack
 
 on:
   push:
@@ -6,35 +6,28 @@ on:
       - main
 
 jobs:
-  notify:
+  zip-and-send:
     runs-on: ubuntu-latest
+
     steps:
-      - name: Checkout repository with submodules
+      # Step 1: Checkout the repository
+      - name: Checkout code
         uses: actions/checkout@v3
-        with:
-          submodules: recursive  # Ensures submodules are fetched correctly
 
-      - name: Fix missing submodule URL (if needed)
+      # Step 2: Locate and zip the text files
+      - name: Zip text files
         run: |
-          git submodule sync --recursive
-          git submodule update --init --recursive || echo "Skipping submodule update due to missing URL"
+          mkdir -p api_tests
+          cp path/to/your/text/files/*.txt api_tests/
+          zip -r api_tests.zip api_tests/
 
-      - name: Create a text file
-        run: echo "🚀 A new push was made to the main branch!" > notification.txt
-
-      - name: Zip the text file
-        run: zip notification.zip notification.txt
-
-      - name: Share the ZIP file to Slack
-        uses: slackapi/slack-github-action@v2.0.0
-        with:
-          method: files.uploadV2
-          token: ${{ secrets.SLACK_BOT_TOKEN }}
-          payload: |
-            channel_id: ${{ secrets.SLACK_CHANNEL_ID }}
-            initial_comment: "🚀 A new push was made!"
-            file: "./notification.zip"
-            filename: "notification-${{ github.sha }}.zip"
+      # Step 3: Upload the zipped file to Slack
+      - name: Send zip file to Slack
         env:
-          SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
-          SLACK_CHANNEL_ID: ${{ secrets.SLACK_CHANNEL_ID }}
+          SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}  # Store your Slack token in GitHub Secrets
+        run: |
+          curl -F file=@api_tests.zip \
+               -F channels=#your-channel-name \
+               -F initial_comment="Latest API test collections are attached! 🚀" \
+               -H "Authorization: Bearer $SLACK_BOT_TOKEN" \
+               https://slack.com/api/files.upload
