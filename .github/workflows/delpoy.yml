@@ -28,7 +28,7 @@ jobs:
             channel_id: ${{ secrets.SLACK_CHANNEL_ID }}
             initial_comment: "🚀 A new push was made!"
             file: "./output.zip"
-            filename: "notification-${{ github.sha }}.zip"
+            filename: "notification.zip"
         env:
           SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
           SLACK_CHANNEL_ID: ${{ secrets.SLACK_CHANNEL_ID }}
